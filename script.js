@@ -1051,6 +1051,12 @@ document.addEventListener("DOMContentLoaded", function () {
   function finishTest() {
     stopTest();
 
+    // Disable typing input for 3 seconds cooldown
+    typingInput.disabled = true;
+    setTimeout(() => {
+      typingInput.disabled = false;
+    }, 3000);
+
     // Calculate final stats
     const elapsedMinutes = state.timeLimit / 60;
     const wpm = Math.round(state.correctWords / elapsedMinutes);
