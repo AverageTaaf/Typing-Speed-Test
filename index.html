@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TypeMaster || Typing Speed Test</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="topographic-bg"></div>
+
+    <div class="container">
+      <header>
+        <h1>TypeMaster</h1>
+        <div class="controls">
+          <button class="theme-toggle" id="theme-toggle">🌙</button>
+        </div>
+      </header>
+
+      <div class="settings-panel">
+        <div class="settings-grid">
+          <div class="setting-group">
+            <label for="time-select">Test Duration</label>
+            <select id="time-select">
+              <option value="30">30 Seconds</option>
+              <option value="60">60 Seconds</option>
+              <option value="120">2 Minutes</option>
+              <option value="300">5 Minutes</option>
+            </select>
+          </div>
+
+          <div class="setting-group">
+            <label for="difficulty-select">Difficulty</label>
+            <select id="difficulty-select">
+              <option value="easy">Easy</option>
+              <option value="medium">Medium</option>
+              <option value="hard">Hard</option>
+            </select>
+          </div>
+
+          <div class="setting-group">
+            <label for="language-select">Language</label>
+            <select id="language-select">
+              <option value="english">English</option>
+              <option value="bangla">Bangla</option>
+            </select>
+          </div>
+
+          <div class="setting-group">
+            <label for="punctuation-toggle">Punctuation & Capitals</label>
+            <select id="punctuation-toggle">
+              <option value="enabled">Enabled</option>
+              <option value="disabled">Disabled</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="test-area">
+        <div class="timer" id="timer">60</div>
+
+        <div class="words-container" id="words-container">
+          <!-- Words will be generated here -->
+        </div>
+
+        <div class="input-area">
+          <input
+            type="text"
+            id="typing-input"
+            placeholder="Click here or start typing to begin the test..."
+            autocomplete="off"
+          />
+        </div>
+      </div>
+
+      <div class="stats-panel">
+        <div class="stats-grid">
+          <div class="stat">
+            <div class="stat-value" id="wpm">0</div>
+            <div class="stat-label">Words Per Minute</div>
+          </div>
+
+          <div class="stat">
+            <div class="stat-value" id="accuracy">100%</div>
+            <div class="stat-label">Accuracy</div>
+          </div>
+
+          <div class="stat">
+            <div class="stat-value" id="keystrokes">0</div>
+            <div class="stat-label">Keystrokes</div>
+          </div>
+
+          <div class="stat">
+            <div class="stat-value" id="errors">0</div>
+            <div class="stat-label">Errors</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ai-analysis">
+        <h3>🤖 AI Analysis</h3>
+        <div class="analysis-content" id="analysis-content">
+          Complete a test to get personalized feedback on your typing
+          performance.
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <p>Typing Speed Test &copy; 2025 | Press Tab to reset the test</p>
+      <p>Taafeef Bin Montaquim || All Rights Reserved</p>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>
