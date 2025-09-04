@@ -180,7 +180,8 @@ button:hover {
   border-radius: 8px;
   padding: 20px;
   margin-bottom: 20px;
-  min-height: 250px;
+  height: 200px; /* Fixed height */
+  overflow-y: auto; /* Make it scrollable */
   font-size: 1.4rem;
   line-height: 2;
   border: 1px solid var(--border);
