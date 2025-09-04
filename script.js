@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
+  // DOM Elements
   const themeToggle = document.getElementById("theme-toggle");
   const timeSelect = document.getElementById("time-select");
   const difficultySelect = document.getElementById("difficulty-select");
@@ -13,6 +14,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const errorsElement = document.getElementById("errors");
   const analysisContent = document.getElementById("analysis-content");
 
+  // Test state
   let testActive = false;
   let timer;
   let timeLeft;
@@ -24,7 +26,10 @@ document.addEventListener("DOMContentLoaded", function () {
   let startTime;
   let keystrokes = 0;
   let correctWords = 0;
+  let totalWordsTyped = 0;
+  let wordStatus = []; // Track status of each word (correct/incorrect)
 
+  // Word lists for different languages and difficulties
   const wordLists = {
     english: {
       easy: [
@@ -1344,8 +1349,10 @@ document.addEventListener("DOMContentLoaded", function () {
     },
   };
 
+  // Load saved preferences
   loadPreferences();
 
+  // Event Listeners
   themeToggle.addEventListener("click", toggleTheme);
   typingInput.addEventListener("input", handleInput);
   typingInput.addEventListener("keydown", handleKeyDown);
@@ -1354,8 +1361,10 @@ document.addEventListener("DOMContentLoaded", function () {
   languageSelect.addEventListener("change", resetTest);
   punctuationToggle.addEventListener("change", resetTest);
 
+  // Initialize the test
   resetTest();
 
+  // Functions
   function toggleTheme() {
     document.body.classList.toggle("dark-theme");
     const isDark = document.body.classList.contains("dark-theme");
@@ -1364,12 +1373,14 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function loadPreferences() {
+    // Load theme
     const savedTheme = localStorage.getItem("theme");
     if (savedTheme === "dark") {
       document.body.classList.add("dark-theme");
       themeToggle.textContent = "☀️";
     }
 
+    // Load test settings
     const savedTime = localStorage.getItem("time");
     if (savedTime) {
       timeSelect.value = savedTime;
@@ -1401,8 +1412,8 @@ document.addEventListener("DOMContentLoaded", function () {
   function generateWords() {
     const language = languageSelect.value;
     const difficulty = difficultySelect.value;
-    const wordCount =
-      difficulty === "easy" ? 80 : difficulty === "medium" ? 60 : 50;
+    // Generate a large number of words (100) to ensure the container is filled
+    const wordCount = 100;
 
     words = [];
     for (let i = 0; i < wordCount; i++) {
@@ -1411,6 +1422,9 @@ document.addEventListener("DOMContentLoaded", function () {
       );
       words.push(wordLists[language][difficulty][randomIndex]);
     }
+
+    // Initialize word status array
+    wordStatus = new Array(words.length).fill(null);
 
     renderWords();
   }
@@ -1421,13 +1435,31 @@ document.addEventListener("DOMContentLoaded", function () {
       const wordSpan = document.createElement("span");
       wordSpan.textContent = word;
       wordSpan.className = "word";
+
+      // Apply styling based on word status
+      if (wordStatus[index] === true) {
+        wordSpan.classList.add("correct");
+      } else if (wordStatus[index] === false) {
+        wordSpan.classList.add("incorrect");
+      }
+
       if (index === currentWordIndex) {
         wordSpan.classList.add("current");
       }
+
       wordsContainer.appendChild(wordSpan);
     });
+
+    // Auto-scroll to keep current word in view
+    const currentWordElement = wordsContainer.querySelector(".current");
+    if (currentWordElement) {
+      currentWordElement.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+        inline: "center",
+      });
+    }
   }
-  0;
 
   function startTest() {
     if (testActive) return;
@@ -1452,18 +1484,24 @@ document.addEventListener("DOMContentLoaded", function () {
     clearInterval(timer);
     testActive = false;
 
+    // Calculate final WPM and accuracy
     const endTime = new Date().getTime();
-    const timeTaken = (endTime - startTime) / 1000 / 60;
+    const timeTaken = (endTime - startTime) / 1000 / 60; // in minutes
     const wpm = Math.round(correctWords / timeTaken);
 
+    // Calculate accuracy based on (correctWords / totalWordsTyped) * 100
     const accuracy =
-      totalChars > 0 ? Math.round((correctChars / totalChars) * 100) : 100;
+      totalWordsTyped > 0
+        ? Math.round((correctWords / totalWordsTyped) * 100)
+        : 100;
 
     wpmElement.textContent = wpm;
     accuracyElement.textContent = `${accuracy}%`;
 
+    // Generate AI analysis
     generateAnalysis(wpm, accuracy);
 
+    // Disable input for 3 seconds
     typingInput.disabled = true;
     setTimeout(() => {
       typingInput.disabled = false;
@@ -1473,13 +1511,18 @@ document.addEventListener("DOMContentLoaded", function () {
   function resetTest() {
     clearInterval(timer);
     testActive = false;
+
+    // Reset stats
     currentWordIndex = 0;
     correctChars = 0;
     totalChars = 0;
     errors = 0;
     keystrokes = 0;
     correctWords = 0;
+    totalWordsTyped = 0;
+    wordStatus = [];
 
+    // Update UI
     wpmElement.textContent = "0";
     accuracyElement.textContent = "100%";
     keystrokesElement.textContent = "0";
@@ -1488,10 +1531,13 @@ document.addEventListener("DOMContentLoaded", function () {
     analysisContent.textContent =
       "Complete a test to get personalized feedback on your typing performance.";
 
+    // Generate new words
     generateWords();
 
+    // Clear input
     typingInput.value = "";
 
+    // Save preferences
     savePreferences();
   }
 
@@ -1506,26 +1552,58 @@ document.addEventListener("DOMContentLoaded", function () {
     const inputText = typingInput.value;
     const currentWord = words[currentWordIndex];
 
+    // Play key sound
     playKeySound();
 
+    // Check if space was pressed (word completed)
     if (inputText.endsWith(" ")) {
+      // Increment total words typed
+      totalWordsTyped++;
+
+      // Check if word was typed correctly
       const typedWord = inputText.trim();
-      if (typedWord === currentWord) {
+      const isCorrect = typedWord === currentWord;
+
+      // Update word status
+      wordStatus[currentWordIndex] = isCorrect;
+
+      if (isCorrect) {
         correctWords++;
       }
 
+      // Update accuracy in real-time
+      const accuracy =
+        totalWordsTyped > 0
+          ? Math.round((correctWords / totalWordsTyped) * 100)
+          : 100;
+      accuracyElement.textContent = `${accuracy}%`;
+
+      // Move to next word
       typingInput.value = "";
       currentWordIndex++;
 
-      if (currentWordIndex >= words.length) {
-        generateWords();
-      } else {
-        renderWords();
+      // If we're approaching the end of the word list, generate more words
+      if (currentWordIndex >= words.length - 10) {
+        // Add more words to the existing list instead of replacing
+        const language = languageSelect.value;
+        const difficulty = difficultySelect.value;
+        const additionalWordCount = 50;
+
+        for (let i = 0; i < additionalWordCount; i++) {
+          const randomIndex = Math.floor(
+            Math.random() * wordLists[language][difficulty].length
+          );
+          words.push(wordLists[language][difficulty][randomIndex]);
+          wordStatus.push(null);
+        }
       }
+
+      renderWords();
 
       return;
     }
 
+    // Check each character for real-time feedback
     totalChars = currentWord.length;
     let correctCount = 0;
 
@@ -1537,14 +1615,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
     correctChars = correctCount;
     errors = inputText.length - correctCount;
-
-    const accuracy =
-      totalChars > 0 ? Math.round((correctChars / totalChars) * 100) : 100;
-    accuracyElement.textContent = `${accuracy}%`;
     errorsElement.textContent = errors;
 
+    // Calculate WPM in real-time
     const currentTime = new Date().getTime();
-    const timeTaken = (currentTime - startTime) / 1000 / 60;
+    const timeTaken = (currentTime - startTime) / 1000 / 60; // in minutes
     const wpm = Math.round(
       (correctWords + correctCount / currentWord.length) / timeTaken
     );
@@ -1552,6 +1627,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function handleKeyDown(e) {
+    // Tab key resets the test
     if (e.key === "Tab") {
       e.preventDefault();
       resetTest();
@@ -1559,6 +1635,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function playKeySound() {
+    // Create a simple keypress sound
     const context = new (window.AudioContext || window.webkitAudioContext)();
     const oscillator = context.createOscillator();
     const gainNode = context.createGain();
