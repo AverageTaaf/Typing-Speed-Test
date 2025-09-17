@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TypeMaster || Typing Speed Test</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+  </head>
+  <body>
+    <div class="topographic-bg"></div>
+    <div id="confetti-canvas"></div>
+
+    <div class="container">
+      <header>
+        <h1>
+          TypeMaster <span class="logo-divider">||</span> Typing Speed Test
+        </h1>
+        <div class="controls">
+          <button class="theme-toggle" id="theme-toggle">🌙</button>
+        </div>
+      </header>
+
+      <div class="settings-panel">
+        <div class="settings-grid">
+          <div class="setting-group">
+            <label for="time-select">Test Duration</label>
+            <select id="time-select">
+              <option value="30">30 Seconds</option>
+              <option value="60">60 Seconds</option>
+              <option value="120">2 Minutes</option>
+              <option value="300">5 Minutes</option>
+            </select>
+          </div>
+
+          <div class="setting-group">
+            <label for="difficulty-select">Difficulty</label>
+            <select id="difficulty-select">
+              <option value="easy">Easy</option>
+              <option value="medium">Medium</option>
+              <option value="hard">Hard</option>
+            </select>
+          </div>
+
+          <div class="setting-group">
+            <label for="language-select">Language</label>
+            <select id="language-select">
+              <option value="english">English</option>
+              <option value="bangla">Bangla</option>
+            </select>
+          </div>
+
+          <div class="setting-group">
+            <label for="punctuation-toggle">Punctuation & Capitals</label>
+            <select id="punctuation-toggle">
+              <option value="enabled">Enabled</option>
+              <option value="disabled">Disabled</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="test-area">
+        <div class="timer" id="timer">60</div>
+
+        <div class="words-container" id="words-container">
+          <!-- Words will be generated here -->
+        </div>
+
+        <div class="input-area">
+          <input
+            type="text"
+            id="typing-input"
+            placeholder="Click here or start typing to begin the test..."
+            autocomplete="off"
+          />
+        </div>
+      </div>
+
+      <div class="stats-panel">
+        <div class="stats-grid">
+          <div class="stat">
+            <div class="stat-value" id="wpm">0</div>
+            <div class="stat-label">Words Per Minute</div>
+          </div>
+
+          <div class="stat">
+            <div class="stat-value" id="accuracy">100%</div>
+            <div class="stat-label">Accuracy</div>
+          </div>
+
+          <div class="stat">
+            <div class="stat-value" id="keystrokes">0</div>
+            <div class="stat-label">Keystrokes</div>
+          </div>
+
+          <div class="stat">
+            <div class="stat-value" id="errors">0</div>
+            <div class="stat-label">Errors</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ai-analysis">
+        <h3>🤖 AI Analysis</h3>
+        <div class="analysis-content" id="analysis-content">
+          Complete a test to get personalized feedback on your typing
+          performance.
+        </div>
+      </div>
+    </div>
+
+    <!-- Name Input Modal -->
+    <div class="modal-overlay" id="name-modal">
+      <div class="modal">
+        <div class="modal-header">
+          <h2>Test Complete! 🎉</h2>
+        </div>
+        <div class="modal-body">
+          <p>Enter your name to save your results:</p>
+          <input
+            type="text"
+            id="user-name"
+            placeholder="Your Name"
+            maxlength="20"
+          />
+        </div>
+        <div class="modal-footer">
+          <button id="submit-name">Submit Results</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results Modal -->
+    <div class="modal-overlay" id="results-modal">
+      <div class="modal">
+        <div class="modal-header">
+          <h2>Congratulations, <span id="result-name"></span>! 🎊</h2>
+        </div>
+        <div class="modal-body">
+          <div class="results-grid">
+            <div class="result-item">
+              <span class="result-label">WPM Score:</span>
+              <span class="result-value" id="result-wpm">0</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Raw WPM:</span>
+              <span class="result-value" id="result-raw">0</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Keystrokes:</span>
+              <span class="result-value" id="result-keystrokes">0</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Mistakes:</span>
+              <span class="result-value" id="result-mistakes">0</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Accuracy:</span>
+              <span class="result-value" id="result-accuracy">100%</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Time:</span>
+              <span class="result-value" id="result-time">60s</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Consistency:</span>
+              <span class="result-value" id="result-consistency">100%</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="retry-test">Try Again</button>
+          <button id="share-results">Share Results</button>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <p>Typing Speed Test &copy; 2025 | Press Tab to reset the test</p>
+      <p>Taafeef Bin Montaquim || All Rights Reserved</p>
+      <p>
+        Also check my other website:
+        <br />
+        <a
+          href="https://weatherify-ai.netlify.app/"
+          target="_blank"
+          rel="noopener"
+          >www.weatherify-ai.com</a
+        >
+      </p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
