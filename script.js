@@ -815,56 +815,16 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
+  function closeResultsModal() {
+    elements.resultsModal.classList.remove("active");
+  }
+
   // Set up event listeners
   function setupEventListeners() {
-    // Add this to the setupEventListeners function
-    document.addEventListener("keydown", function (e) {
-      if (e.key === "Tab") {
-        e.preventDefault();
-        if (state.isTestActive || state.isTestComplete) {
-          resetTest();
-        }
-      }
-    });
-    // Add this to the setupEventListeners function
-    document
-      .getElementById("close-results")
-      .addEventListener("click", function () {
-        elements.resultsModal.classList.remove("active");
-        resetTest();
-      });
-
-    // Add this to setupEventListeners function
-    elements.submitName.addEventListener("click", function () {
-      const userName = elements.userName.value.trim();
-      if (!userName) {
-        showNotification("Please enter your name");
-        return;
-      }
-
-      // Close name modal
-      elements.nameModal.classList.remove("active");
-
-      // Show results modal with the entered name
-      elements.resultName.textContent = userName;
-      elements.resultsModal.classList.add("active");
-    });
-
-    // Add this to setupEventListeners function
-    document
-      .getElementById("close-results")
-      .addEventListener("click", function () {
-        elements.resultsModal.classList.remove("active");
-      });
-
-    // Add this to setupEventListeners function
-    document
-      .getElementById("retry-test")
-      .addEventListener("click", function () {
-        elements.resultsModal.classList.remove("active");
-        resetTest();
-      });
     // Theme toggle
+    document
+      .getElementById("close-results")
+      .addEventListener("click", closeResultsModal);
     elements.themeToggle.addEventListener("click", toggleTheme);
 
     // Typing input events
@@ -1037,16 +997,18 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // Handle typing input
-  // Replace the handleTyping function with this:
   function handleTyping(e) {
     const input = e.target.value;
     const currentWord = state.words[state.currentWordIndex];
 
-    // Start the test and timer on first keystroke
-    if (!state.isTestActive && input.length > 0) {
+    // Start the test on first keystroke
+    if (!state.isTestActive) {
       state.isTestActive = true;
-      state.startTime = Date.now();
+    }
 
+    // Start timer on first keystroke, not when test becomes active
+    if (!state.startTime) {
+      state.startTime = Date.now();
       if (state.currentMode === "timed") {
         startTimer();
       } else if (state.currentMode === "survival") {
@@ -1059,15 +1021,17 @@ document.addEventListener("DOMContentLoaded", function () {
       // Remove the space and check the word
       const typedWord = input.trim();
 
-      if (typedWord === currentWord) {
+      if (typedWord === currentWord.text) {
         // Correct word
+        currentWord.element.classList.add("correct");
         state.correctKeystrokes += typedWord.length + 1; // +1 for space
       } else {
         // Incorrect word
+        currentWord.element.classList.add("incorrect");
         state.errors++;
 
         // Track error data for AI analysis
-        const errorKey = `${currentWord}->${typedWord}`;
+        const errorKey = `${currentWord.text}->${typedWord}`;
         state.errorData[errorKey] = (state.errorData[errorKey] || 0) + 1;
       }
 
@@ -1076,12 +1040,11 @@ document.addEventListener("DOMContentLoaded", function () {
       e.target.value = "";
 
       // Update word highlighting
-      renderWords();
+      highlightCurrentWord();
 
       // Check if we need more words
-      if (state.currentWordIndex >= state.words.length - 30) {
-        addMoreWords(50);
-        renderWords();
+      if (state.currentWordIndex >= state.words.length - 5) {
+        addMoreWords();
       }
 
       // For survival mode, check mistakes limit
@@ -1095,22 +1058,29 @@ document.addEventListener("DOMContentLoaded", function () {
         }
       }
     } else {
-      // Still typing the word - update highlighting
-      const wordSpans = elements.wordsContainer.querySelectorAll(".word");
-      if (wordSpans[state.currentWordIndex]) {
-        wordSpans[state.currentWordIndex].className = "word current";
+      // Check current character
+      const currentCharIndex = input.length;
+      const wordElement = currentWord.element;
+      const charElements = wordElement.querySelectorAll("span");
 
-        if (!currentWord.startsWith(input)) {
-          wordSpans[state.currentWordIndex].classList.add("incorrect");
+      // Reset all character classes
+      charElements.forEach((char, index) => {
+        char.className = "";
+        if (index < currentCharIndex) {
+          if (input[index] === currentWord.text[index]) {
+            char.classList.add("correct");
+          } else {
+            char.classList.add("incorrect");
+          }
         }
-      }
+      });
+
+      // Update keystroke count
+      state.totalKeystrokes = state.correctKeystrokes + state.errors;
+
+      // Update stats
+      updateStats();
     }
-
-    // Update keystroke count
-    state.totalKeystrokes = input.length;
-
-    // Update stats
-    updateStats();
   }
 
   // Generate words for typing test
@@ -1199,12 +1169,6 @@ document.addEventListener("DOMContentLoaded", function () {
         word.element.classList.remove("current");
       }
     });
-  }
-
-  // Replace the startTest function with this:
-  function startTest() {
-    // Don't start automatically - only start when user types
-    elements.typingInput.focus();
   }
 
   // Start the timer for timed mode
