@@ -1043,7 +1043,7 @@ document.addEventListener("DOMContentLoaded", function () {
       highlightCurrentWord();
 
       // Check if we need more words
-      if (state.currentWordIndex >= state.words.length - 5) {
+      if (state.currentWordIndex >= state.words.length - 10) {
         addMoreWords();
       }
 
@@ -1102,7 +1102,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const wordList = wordLists[language][difficulty];
 
     // Generate 40 words to start with
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 120; i++) {
       const randomIndex = Math.floor(Math.random() * wordList.length);
       const word = wordList[randomIndex];
       state.wordList.push(word);
@@ -1221,7 +1221,10 @@ document.addEventListener("DOMContentLoaded", function () {
     const wpm = Math.round(wordsTyped / elapsedTime) || 0;
     const accuracy =
       state.totalKeystrokes > 0
-        ? Math.round((state.correctKeystrokes / state.totalKeystrokes) * 100)
+        ? Math.min(
+            100,
+            Math.round((state.correctKeystrokes / state.totalKeystrokes) * 100)
+          )
         : 100;
 
     elements.wpm.textContent = wpm;
@@ -1256,7 +1259,10 @@ document.addEventListener("DOMContentLoaded", function () {
     const rawWpm = Math.round(state.totalKeystrokes / 5 / elapsedMinutes) || 0;
     const accuracy =
       state.totalKeystrokes > 0
-        ? Math.round((state.correctKeystrokes / state.totalKeystrokes) * 100)
+        ? Math.min(
+            100,
+            Math.round((state.correctKeystrokes / state.totalKeystrokes) * 100)
+          )
         : 100;
 
     // Show results
@@ -1375,7 +1381,10 @@ document.addEventListener("DOMContentLoaded", function () {
     const rawWpm = Math.round(state.totalKeystrokes / 5 / elapsedMinutes) || 0;
     const accuracy =
       state.totalKeystrokes > 0
-        ? Math.round((state.correctKeystrokes / state.totalKeystrokes) * 100)
+        ? Math.min(
+            100,
+            Math.round((state.correctKeystrokes / state.totalKeystrokes) * 100)
+          )
         : 100;
 
     // Save to Firestore
