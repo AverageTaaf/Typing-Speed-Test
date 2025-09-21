@@ -465,14 +465,15 @@ footer a:hover {
 
 .modal {
   background: var(--card-bg);
+  font-size: 30px;
   border-radius: 10px;
-  width: 90%;
-  max-width: 500px;
-  max-height: 90vh;
+  width: 70%;
+  height: 70%;
   overflow-y: auto;
   box-shadow: var(--shadow);
   transform: translateY(-20px);
   transition: var(--transition);
+  justify-content: center;
 }
 
 .modal-overlay.active .modal {
@@ -480,7 +481,8 @@ footer a:hover {
 }
 
 .modal-header {
-  padding: 1.5rem;
+  margin-top: 90px;
+  padding: 2rem;
   border-bottom: 1px solid var(--border-color);
   display: flex;
   justify-content: space-between;
@@ -488,15 +490,29 @@ footer a:hover {
 }
 
 .modal-body {
-  padding: 1.5rem;
+  padding: 2rem;
 }
 
 .modal-footer {
-  padding: 1.5rem;
+  padding: 2rem;
   border-top: 1px solid var(--border-color);
   display: flex;
   gap: 1rem;
-  justify-content: flex-end;
+  justify-content: center;
+}
+
+.modal-btn {
+  flex: 1;
+  padding: 0.75rem;
+  font-size: 1.7rem;
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 4rem;
+  cursor: pointer;
+  color: var(--text-color);
 }
 
 .modal-close {
