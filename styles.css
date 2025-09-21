@@ -1,13 +1,11 @@
-/* styles.css */
-/* Your existing CSS remains exactly the same */
 :root {
   --primary-color: #4361ee;
   --secondary-color: #3a0ca3;
   --accent-color: #7209b7;
   --text-color: #333;
-  --bg-color: #f8f9fa;
-  --card-bg: #c2c2c2;
-  --border-color: #a9a9a9;
+  --bg-color: #c7c7c7;
+  --card-bg: #d4d4d4;
+  --border-color: #dee2e6;
   --success-color: #4cc9f0;
   --error-color: #f72585;
   --warning-color: #f77f00;
@@ -17,9 +15,9 @@
 
 .dark-theme {
   --text-color: #f8f9fa;
-  --bg-color: #373737;
-  --card-bg: #2f2f2f;
-  --border-color: #ffffff;
+  --bg-color: #363636;
+  --card-bg: #3d3d3d;
+  --border-color: #333;
   --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
 
@@ -270,7 +268,6 @@ input {
   padding: 0.5rem;
   border-radius: 5px;
   transition: var(--transition);
-  border: 1px solid -var (--border-color);
 }
 
 .word.current {
@@ -505,20 +502,9 @@ footer a:hover {
 .modal-close {
   background: none;
   border: none;
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   cursor: pointer;
-  color: var(--text-light);
-  width: auto;
-  padding: 0;
-  margin: 0;
-  position: static;
-}
-
-.modal-close:hover {
-  color: var(--danger);
-  transform: none;
-  box-shadow: none;
-  background: none;
+  color: var(--text-color);
 }
 
 .results-grid {
