@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TypeMaster</title>
+    <!-- Firebase App and Auth SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="topographic-bg"></div>
+    <div id="confetti-canvas"></div>
+
+    <!-- Notification System -->
+    <div class="modal-overlay" id="notification-modal">
+        <div class="modal">
+            <div class="modal-body">
+                <p id="notification-message"></p>
+            </div>
+            <div class="modal-footer">
+                <button id="close-notification" tabindex="-1">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tutorial Modal -->
+    <div class="modal-overlay tutorial-modal" id="tutorial-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Welcome to TypeMaster! 🎉</h2>
+            </div>
+            <div class="modal-body">
+                <div class="tutorial-steps">
+                    <div class="tutorial-step">
+                        <h3>Step 1: Choose Your Mode</h3>
+                        <p>Select between Timed Test or Survival Mode</p>
+                    </div>
+                    <div class="tutorial-step">
+                        <h3>Step 2: Adjust Settings</h3>
+                        <p>Customize duration, difficulty, and language</p>
+                    </div>
+                    <div class="tutorial-step">
+                        <h3>Step 3: Start Typing</h3>
+                        <p>Click the input field and begin typing the words</p>
+                    </div>
+                    <div class="tutorial-step">
+                        <h3>Step 4: Review Results</h3>
+                        <p>Get detailed analysis of your performance</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="close-tutorial" tabindex="-1">Get Started</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>TypeMaster</h1>
+            <div class="controls">
+                <div class="user-status" id="user-status">
+                    <div class="user-avatar" id="user-avatar">?</div>
+                    <span class="user-name" id="user-name-display">Guest</span>
+                    <button id="login-btn" tabindex="-1">Login</button>
+                    <button id="logout-btn" style="display: none; width: 150px" tabindex="-1">
+                        Logout
+                    </button>
+                </div>
+                <button class="help-btn" id="help-btn" tabindex="-1" title="Help">
+                    &#10067;
+                </button>
+                <button class="theme-toggle" id="theme-toggle" tabindex="-1">
+                    &#127769;
+                </button>
+            </div>
+        </header>
+
+        <div class="settings-panel">
+            <h3> Game Mode </h3>
+            <br>
+            <div class="game-mode-selector">
+                <div class="game-mode-btn active" data-mode="timed" tabindex="-1">
+                    Timed Test
+                </div>
+                <div class="game-mode-btn" data-mode="survival" tabindex="-1">
+                    Survival Mode
+                </div>
+                <div class="game-mode-btn" data-mode="practice" tabindex="-1">
+                    AI Practice
+                </div>
+                <div class="game-mode-btn" data-mode="prediction" tabindex="-1">
+                    Prediction Challenge
+                </div>
+                <div class="game-mode-btn" data-mode="numbers" tabindex="-1">
+                    Numbers Only
+                </div>
+                <div class="game-mode-btn" data-mode="curriculum" tabindex="-1">
+                    Curriculum
+                </div>
+            </div>
+
+            <div class="mode-settings active" id="timed-settings">
+                <div class="settings-grid">
+                    <div class="setting-group">
+                        <label for="time-select">Test Duration</label>
+                        <select id="time-select" tabindex="-1">
+                            <option value="30">30 Seconds</option>
+                            <option value="60" selected>60 Seconds</option>
+                            <option value="120">2 Minutes</option>
+                            <option value="300">5 Minutes</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                    </div>
+
+                    <div class="setting-group" id="custom-time-group" style="display: none">
+                        <label for="custom-time">Custom Time (seconds)</label>
+                        <input type="number" id="custom-time" min="10" max="600" value="60" tabindex="-1" />
+                    </div>
+
+                    <div class="setting-group">
+                        <label for="difficulty-select">Difficulty</label>
+                        <select id="difficulty-select" tabindex="-1">
+                            <option value="easy" selected>Easy</option>
+                            <option value="medium">Medium</option>
+                            <option value="hard">Hard</option>
+                        </select>
+                    </div>
+
+                    <div class="setting-group">
+                        <label for="language-select">Language</label>
+                        <select id="language-select" tabindex="-1">
+                            <option value="english" selected>English</option>
+                            <option value="bangla">Bangla</option>
+                        </select>
+                    </div>
+
+                    <div class="setting-group">
+                        <label for="punctuation-toggle">Punctuation & Capitals</label>
+                        <select id="punctuation-toggle" tabindex="-1">
+                            <option value="enabled">Enabled</option>
+                            <option value="disabled" selected>Disabled</option>
+                        </select>
+                    </div>
+
+                    <div class="setting-group">
+                        <label for="sound-select">Keyboard Sound</label>
+                        <select id="sound-select" tabindex="-1">
+                            <option value="none">None</option>
+                            <option value="mechanical">Mechanical</option>
+                            <option value="typewriter">Typewriter</option>
+                            <option value="asmr">ASMR</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mode-settings" id="survival-settings">
+                <div class="settings-grid">
+                    <div class="setting-group">
+                        <label for="survival-type">End Condition</label>
+                        <select id="survival-type" tabindex="-1">
+                            <option value="mistakes" selected>Max Mistakes</option>
+                            <option value="time">Time Limit</option>
+                        </select>
+                    </div>
+
+                    <div class="setting-group" id="max-mistakes-group">
+                        <label for="max-mistakes">Maximum Mistakes</label>
+                        <input type="number" id="max-mistakes" min="1" max="50" value="5" tabindex="-1" />
+                    </div>
+
+                    <div class="setting-group" id="survival-time-group" style="display: none">
+                        <label for="survival-time">Time Limit (minutes)</label>
+                        <input type="number" id="survival-time" min="1" max="60" value="5" tabindex="-1" />
+                    </div>
+
+                    <div class="setting-group">
+                        <label for="survival-difficulty">Difficulty</label>
+                        <select id="survival-difficulty" tabindex="-1">
+                            <option value="easy" selected>Easy</option>
+                            <option value="medium">Medium</option>
+                            <option value="hard">Hard</option>
+                        </select>
+                    </div>
+
+                    <div class="setting-group">
+                        <label for="survival-language">Language</label>
+                        <select id="survival-language" tabindex="-1">
+                            <option value="english" selected>English</option>
+                            <option value="bangla">Bangla</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mode-settings" id="practice-settings">
+                <div class="ai-practice">
+                    <h3>AI-Powered Practice</h3>
+                    <p>
+                        Based on your previous performance, we recommend practicing these
+                        areas:
+                    </p>
+                    <div id="ai-suggestions">
+                        <!-- AI suggestions will appear here -->
+                    </div>
+                    <div class="setting-group">
+                        <label for="practice-focus">Focus Area</label>
+                        <select id="practice-focus" tabindex="-1">
+                            <option value="speed">Speed</option>
+                            <option value="accuracy">Accuracy</option>
+                            <option value="difficult-words">Difficult Words</option>
+                            <option value="numbers">Numbers</option>
+                            <option value="punctuation">Punctuation</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mode-settings" id="prediction-settings">
+                <div class="prediction-challenge">
+                    <h3>Prediction Challenge</h3>
+                    <p>
+                        Type the predicted text based on the context. This helps improve
+                        your typing flow and anticipation.
+                    </p>
+                    <div class="setting-group">
+                        <label for="prediction-difficulty">Difficulty</label>
+                        <select id="prediction-difficulty" tabindex="-1">
+                            <option value="easy" selected>Easy</option>
+                            <option value="medium">Medium</option>
+                            <option value="hard">Hard</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mode-settings" id="numbers-settings">
+                <div class="setting-group">
+                    <label for="numbers-length">Number of Digits</label>
+                    <select id="numbers-length" tabindex="-1">
+                        <option value="10">10 Digits</option>
+                        <option value="20" selected>20 Digits</option>
+                        <option value="50">50 Digits</option>
+                        <option value="100">100 Digits</option>
+                    </select>
+                </div>
+                <div class="setting-group">
+                    <label for="numbers-type">Number Type</label>
+                    <select id="numbers-type" tabindex="-1">
+                        <option value="random" selected>Random</option>
+                        <option value="sequential">Sequential</option>
+                        <option value="decimal">Decimal Numbers</option>
+                        <option value="phone">Phone Numbers</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mode-settings" id="curriculum-settings">
+                <div class="curriculum-container">
+                    <h3>Typing Curriculum</h3>
+                    <p>Follow our structured learning path to improve your typing skills.</p>
+                    <div id="curriculum-levels">
+                        <!-- Curriculum levels will appear here -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="theme-selector">
+                <div class="theme-option active" style="background: #c7c7c7" data-theme="light" tabindex="-1"></div>
+                <div class="theme-option" style="background: #363636" data-theme="dark" tabindex="-1"></div>
+                <div class="theme-option" style="background: #2563eb" data-theme="blue" tabindex="-1"></div>
+                <div class="theme-option" style="background: #db2777" data-theme="pink" tabindex="-1"></div>
+                <div class="theme-option" style="background: #059669" data-theme="green" tabindex="-1"></div>
+            </div>
+
+            <div class="font-selector">
+                <div class="font-option active" data-font="default" tabindex="-1">Default</div>
+                <div class="font-option" data-font="monospace" tabindex="-1">Monospace</div>
+                <div class="font-option" data-font="serif" tabindex="-1">Serif</div>
+                <div class="font-option" data-font="sans-serif" tabindex="-1">Sans-Serif</div>
+            </div>
+
+            <button id="start-btn" tabindex="-1">Start Typing Test</button>
+            <button id="reset-btn" class="secondary" tabindex="-1">
+                Reset Test
+            </button>
+        </div>
+
+        <div class="test-area">
+            <div class="timer" id="timer">60</div>
+            <div class="words-container" id="words-container">
+                <!-- Words will be generated here -->
+            </div>
+            <div class="input-area">
+                <input type="text" id="typing-input" placeholder="Start typing here..." autocomplete="off"
+                    tabindex="0" />
+                <div class="on-screen-keyboard" id="keyboard">
+                    <!-- Keyboard will be generated here -->
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-panel">
+            <div class="stats-grid">
+                <div class="stat">
+                    <div class="stat-value" id="wpm">0</div>
+                    <div class="stat-label">WPM</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="accuracy">100%</div>
+                    <div class="stat-label">Accuracy</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="correct-words">0</div>
+                    <div class="stat-label">Correct Words</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="incorrect-words">0</div>
+                    <div class="stat-label">Incorrect Words</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="time-remaining">60</div>
+                    <div class="stat-label">Seconds Left</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="keystrokes">0</div>
+                    <div class="stat-label">Keystrokes</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ai-analysis">
+            <h2>AI Performance Analysis</h2>
+            <div class="analysis-content" id="analysis-content">
+                <p>Complete a test to see your detailed analysis</p>
+            </div>
+
+            <div class="analytics-grid">
+                <div class="analytics-card">
+                    <h3>Progress Over Time</h3>
+                    <div class="chart-container">
+                        <canvas id="progress-chart"></canvas>
+                    </div>
+                </div>
+                <div class="analytics-card">
+                    <h3>Accuracy by Character</h3>
+                    <div class="chart-container">
+                        <canvas id="accuracy-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="heatmap-container">
+                <div class="heatmap-title">Typing Heatmap</div>
+                <div class="heatmap-keys" id="heatmap-keys">
+                    <!-- Heatmap will be generated here -->
+                </div>
+            </div>
+
+            <div class="error-breakdown">
+                <div class="heatmap-title">Common Errors</div>
+                <div id="error-breakdown">
+                    <!-- Error breakdown will be generated here -->
+                </div>
+            </div>
+        </div>
+
+        <div class="profile-container" id="profile-container" style="display: none">
+            <div class="profile-avatar" id="profile-avatar">?</div>
+            <div class="profile-stats" id="profile-stats">
+                <!-- Profile stats will be generated here -->
+            </div>
+        </div>
+
+        <div class="achievements" id="achievements-container">
+            <!-- Achievements will be generated here -->
+        </div>
+
+        <footer>
+            <p>
+                &copy; 2023 TypeMaster. All rights reserved. |
+                <a href="#" id="privacy-link" tabindex="-1">Privacy Policy</a> |
+                <a href="#" id="terms-link" tabindex="-1">Terms of Service</a>
+            </p>
+        </footer>
+    </div>
+
+    <!-- Auth Modal -->
+    <div class="modal-overlay" id="auth-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Login / Sign Up</h2>
+                <button class="modal-close-btn" id="close-auth" tabindex="-1">
+                    &times;
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-tabs">
+                    <div class="form-tab active" data-tab="login" tabindex="-1">
+                        Login
+                    </div>
+                    <div class="form-tab" data-tab="signup" tabindex="-1">
+                        Sign Up
+                    </div>
+                </div>
+
+                <div id="login-form">
+                    <div class="setting-group">
+                        <label for="login-email">Email</label>
+                        <input type="email" id="login-email" placeholder="Enter your email" tabindex="-1" />
+                    </div>
+                    <div class="setting-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" placeholder="Enter your password" tabindex="-1" />
+                    </div>
+                    <button id="login-submit" class="modal-btn" tabindex="-1">
+                        Login
+                    </button>
+                    <div class="google-signin" id="google-login" tabindex="-1">
+                        <i class="fab fa-google"></i>
+                        Sign in with Google
+                    </div>
+                </div>
+
+                <div id="signup-form" style="display: none">
+                    <div class="setting-group">
+                        <label for="signup-email">Email</label>
+                        <input type="email" id="signup-email" placeholder="Enter your email" tabindex="-1" />
+                    </div>
+                    <div class="setting-group">
+                        <label for="signup-username">Username</label>
+                        <input type="text" id="signup-username" placeholder="Choose a username" tabindex="-1" />
+                    </div>
+                    <div class="setting-group">
+                        <label for="signup-password">Password</label>
+                        <input type="password" id="signup-password" placeholder="Create a password" tabindex="-1" />
+                    </div>
+                    <div class="password-requirements">
+                        <p>Password must contain:</p>
+                        <ul>
+                            <li id="req-length" class="requirement-not-met">
+                                At least 8 characters
+                            </li>
+                            <li id="req-uppercase" class="requirement-not-met">
+                                One uppercase letter
+                            </li>
+                            <li id="req-lowercase" class="requirement-not-met">
+                                One lowercase letter
+                            </li>
+                            <li id="req-number" class="requirement-not-met">
+                                One number
+                            </li>
+                        </ul>
+                    </div>
+                    <button id="signup-submit" class="modal-btn" tabindex="-1">
+                        Sign Up
+                    </button>
+                    <div class="google-signin" id="google-signup" tabindex="-1">
+                        <i class="fab fa-google"></i>
+                        Sign up with Google
+                    </div>
+                </div>
+
+                <div class="form-error" id="auth-error"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Modal -->
+    <div class="modal-overlay" id="results-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Test Results</h2>
+                <button class="modal-close-btn" id="close-results" tabindex="-1">
+                    &times;
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="results-grid">
+                    <div class="result-item">
+                        <span class="result-label">WPM:</span>
+                        <span class="result-value" id="result-wpm">0</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Accuracy:</span>
+                        <span class="result-value" id="result-accuracy">100%</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Correct Words:</span>
+                        <span class="result-value" id="result-correct">0</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Incorrect Words:</span>
+                        <span class="result-value" id="result-incorrect">0</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Keystrokes:</span>
+                        <span class="result-value" id="result-keystrokes">0</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Time:</span>
+                        <span class="result-value" id="result-time">60s</span>
+                    </div>
+                </div>
+                <div class="achievements" id="results-achievements">
+                    <!-- New achievements will appear here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="results-share" class="modal-btn secondary" tabindex="-1">
+                    Share Results
+                </button>
+                <button id="results-retry" class="modal-btn" tabindex="-1">
+                    Try Again
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Privacy Policy Modal -->
+    <div class="modal-overlay" id="privacy-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Privacy Policy</h2>
+                <button class="modal-close-btn" id="close-privacy" tabindex="-1">
+                    &times;
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>
+                    TypeMaster is committed to protecting your privacy. We collect only
+                    the data necessary to provide our typing test services and improve
+                    your experience.
+                </p>
+                <h3>Data We Collect</h3>
+                <ul>
+                    <li>Typing test results (WPM, accuracy, etc.)</li>
+                    <li>Account information (if you create an account)</li>
+                    <li>Performance analytics to help improve your skills</li>
+                </ul>
+                <h3>How We Use Your Data</h3>
+                <ul>
+                    <li>To provide personalized typing practice recommendations</li>
+                    <li>To track your progress over time</li>
+                    <li>To improve our services</li>
+                </ul>
+                <p>
+                    We do not sell your personal data to third parties. Your data is
+                    stored securely and used only to enhance your TypeMaster experience.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button id="accept-privacy" class="modal-btn" tabindex="-1">
+                    I Understand
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Terms of Service Modal -->
+    <div class="modal-overlay" id="terms-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Terms of Service</h2>
+                <button class="modal-close-btn" id="close-terms" tabindex="-1">
+                    &times;
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>
+                    By using TypeMaster, you agree to the following terms and conditions:
+                </p>
+                <h3>User Responsibilities</h3>
+                <ul>
+                    <li>You must be at least 13 years old to use this service</li>
+                    <li>You are responsible for maintaining the security of your account</li>
+                    <li>You agree not to use automated scripts or bots</li>
+                </ul>
+                <h3>Service Usage</h3>
+                <ul>
+                    <li>TypeMaster is provided for personal and educational use</li>
+                    <li>We reserve the right to modify or discontinue the service</li>
+                    <li>Content is provided for typing practice purposes only</li>
+                </ul>
+                <h3>Limitation of Liability</h3>
+                <p>
+                    TypeMaster is not liable for any damages resulting from the use of
+                    our service. We make no warranties about the accuracy or reliability
+                    of the service.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button id="accept-terms" class="modal-btn" tabindex="-1">
+                    I Agree
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div class="modal-overlay" id="help-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>TypeMaster Help Guide</h2>
+                <button class="modal-close-btn" id="close-help" tabindex="-1">
+                    &times;
+                </button>
+            </div>
+            <div class="modal-body">
+                <h3>🎯 Getting Started</h3>
+                <p>TypeMaster is a comprehensive typing test platform designed to improve your typing speed and
+                    accuracy.</p>
+
+                <h3>⌨️ Keyboard Shortcuts</h3>
+                <ul>
+                    <li><strong>Tab</strong> - Start a new test or restart current test</li>
+                    <li><strong>Escape</strong> - Stop current test (does not restart)</li>
+                    <li><strong>Just start typing</strong> - Auto-starts the test</li>
+                </ul>
+
+                <h3>🎮 Game Modes</h3>
+                <ul>
+                    <li><strong>Timed Test</strong> - Type as many words as you can within a time limit</li>
+                    <li><strong>Survival Mode</strong> - Continue until you reach maximum mistakes or time runs out</li>
+                    <li><strong>AI Practice</strong> - Get personalized practice recommendations</li>
+                    <li><strong>Prediction Challenge</strong> - Type predicted text to improve flow</li>
+                    <li><strong>Numbers Only</strong> - Practice typing numbers and special characters</li>
+                    <li><strong>Curriculum</strong> - Follow structured lessons to improve systematically</li>
+                </ul>
+
+                <h3>📊 Features</h3>
+                <ul>
+                    <li><strong>Auto-word generation</strong> - New words appear automatically as you type</li>
+                    <li><strong>Real-time stats</strong> - WPM, accuracy, and metrics update live</li>
+                    <li><strong>Visual feedback</strong> - Green for correct, red for incorrect characters</li>
+                    <li><strong>Achievements</strong> - Unlock badges based on your performance</li>
+                    <li><strong>Multiple themes</strong> - Choose from 5 different color themes</li>
+                    <li><strong>Profile tracking</strong> - Save your progress with Google sign-in</li>
+                </ul>
+
+                <h3>💡 Tips for Success</h3>
+                <ul>
+                    <li>Focus on accuracy first, speed will come naturally</li>
+                    <li>Use proper finger placement on home row keys</li>
+                    <li>Practice regularly for best results</li>
+                    <li>Watch the pulsing animation on the current word</li>
+                    <li>Take breaks to avoid fatigue</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button id="accept-help" class="modal-btn" tabindex="-1">
+                    Got It!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="script.js"></script>
+</body>
+
+</html>
