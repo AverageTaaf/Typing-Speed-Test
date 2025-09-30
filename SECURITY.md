@@ -187,12 +187,12 @@ If you're contributing to TypeMaster:
 
 ### Security Team
 
-**Email**: [security@your-domain.com]
+**Email**: [montaquim.tbm@gmail.com]
 **PGP Key**: [Coming soon]
 
 ### General Support
 
-**Email**: [support@your-domain.com]
+**Email**: [montaquim.tbm@gmail.com]
 **GitHub**: [Repository URL]/security
 
 ---
