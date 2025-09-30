@@ -111,7 +111,6 @@ const elements = {
   resultsRetry: document.getElementById("results-retry"),
 
   // Theme
-  themeToggle: document.getElementById("theme-toggle"),
   themeOptions: document.querySelectorAll(".theme-option"),
   fontOptions: document.querySelectorAll(".font-option"),
 
@@ -202,7 +201,6 @@ function setupEventListeners() {
   elements.timeSelect.addEventListener("change", handleTimeSelectChange);
   elements.customTime.addEventListener("input", updateTimerDisplay);
   elements.survivalType.addEventListener("change", handleSurvivalTypeChange);
-  elements.themeToggle.addEventListener("click", toggleTheme);
   elements.themeOptions.forEach((option) => {
     option.addEventListener("click", () => changeTheme(option.dataset.theme));
   });
@@ -253,9 +251,9 @@ function setupEventListeners() {
   elements.closeHelp.addEventListener("click", () =>
     hideModal(elements.helpModal)
   );
-  document.getElementById("accept-help").addEventListener("click", () =>
-    hideModal(elements.helpModal)
-  );
+  document
+    .getElementById("accept-help")
+    .addEventListener("click", () => hideModal(elements.helpModal));
 
   // Results actions
   elements.resultsShare.addEventListener("click", shareResults);
@@ -316,7 +314,9 @@ function generateKeyboard() {
         keyElement.style.minWidth = "100px";
       }
 
-      keyElement.addEventListener("click", () => handleVirtualKeyPress(key === "Space" ? " " : key));
+      keyElement.addEventListener("click", () =>
+        handleVirtualKeyPress(key === "Space" ? " " : key)
+      );
       rowElement.appendChild(keyElement);
     });
 
@@ -507,8 +507,22 @@ function resetTest() {
   // Reset timer display
   updateTimerDisplay();
 
-  // Clear words container
-  elements.wordsContainer.innerHTML = "";
+  // Regenerate words instead of clearing
+  if (state.currentMode === "numbers") {
+    generateNumbers();
+  } else if (state.currentMode === "prediction") {
+    generatePredictionText();
+  } else if (state.currentMode === "practice") {
+    generatePracticeText();
+  } else if (state.currentMode === "curriculum") {
+    // For curriculum, show the current lesson or first lesson
+    if (state.currentLesson) {
+      loadCurriculumLesson(state.currentLesson);
+    }
+  } else {
+    generateWords();
+  }
+  updateWordHighlighting();
 
   // Reset stats
   updateStats();
@@ -587,13 +601,16 @@ function handleWordsInput(value) {
 
     // Check if user is about to run out of words (5th last word)
     const wordsRemaining = state.words.length - state.currentWordIndex;
-    if (wordsRemaining === 5 && (state.currentMode === "survival" || state.currentMode === "timed")) {
+    if (
+      wordsRemaining === 5 &&
+      (state.currentMode === "survival" || state.currentMode === "timed")
+    ) {
       // Generate 15 more words
       const newWords = [];
       const difficulty = elements.difficultySelect.value;
       const language = elements.languageSelect.value;
       const punctuation = elements.punctuationToggle.value === "enabled";
-      
+
       for (let i = 0; i < 15; i++) {
         let word = getRandomWord(difficulty, language);
         if (punctuation && Math.random() < 0.1) {
@@ -601,7 +618,7 @@ function handleWordsInput(value) {
         }
         newWords.push(word);
         state.words.push(word);
-        
+
         // Create word element
         const wordElement = document.createElement("div");
         wordElement.className = "word";
@@ -611,7 +628,10 @@ function handleWordsInput(value) {
     }
 
     // Check survival mode mistakes
-    if (state.currentMode === "survival" && elements.survivalType.value === "mistakes") {
+    if (
+      state.currentMode === "survival" &&
+      elements.survivalType.value === "mistakes"
+    ) {
       const maxMistakes = parseInt(elements.maxMistakes.value) || 5;
       if (state.incorrectWords >= maxMistakes) {
         endTest();
@@ -621,7 +641,12 @@ function handleWordsInput(value) {
 
     // Check if test is complete
     if (state.currentWordIndex >= state.words.length) {
-      if (state.currentMode === "survival" || state.currentMode === "timed" || state.currentMode === "practice" || state.currentMode === "prediction") {
+      if (
+        state.currentMode === "survival" ||
+        state.currentMode === "timed" ||
+        state.currentMode === "practice" ||
+        state.currentMode === "prediction"
+      ) {
         // Generate more words until timer runs out
         generateMoreWords();
       } else {
@@ -796,13 +821,24 @@ function startTimer(seconds) {
   elements.timer.textContent = timeLeft;
   elements.timeRemaining.textContent = timeLeft;
 
+  // Remove danger class at start
+  elements.timer.classList.remove("danger");
+
   state.timerInterval = setInterval(() => {
     timeLeft--;
     elements.timer.textContent = timeLeft;
     elements.timeRemaining.textContent = timeLeft;
 
+    // Add danger class when 10 seconds or less remain
+    if (timeLeft <= 10 && timeLeft > 0) {
+      elements.timer.classList.add("danger");
+    } else {
+      elements.timer.classList.remove("danger");
+    }
+
     if (timeLeft <= 0) {
       clearInterval(state.timerInterval);
+      elements.timer.classList.remove("danger");
       endTest();
     }
   }, 1000);
@@ -864,7 +900,7 @@ function endTest() {
       description: "Complete your first typing test",
       icon: "🎯",
     });
-    
+
     // Save to database if user is logged in
     if (state.user) {
       db.collection("users")
@@ -882,6 +918,11 @@ function endTest() {
           console.error("Error saving first test achievement:", error);
         });
     }
+  }
+
+  // Complete curriculum lesson if in curriculum mode
+  if (state.currentMode === "curriculum") {
+    completeCurriculumLesson(wpm, accuracy);
   }
 
   // Save test results if user is logged in
@@ -943,17 +984,17 @@ function generateMoreWords() {
   const difficulty = elements.difficultySelect.value;
   const language = elements.languageSelect.value;
   const punctuation = elements.punctuationToggle.value === "enabled";
-  
+
   // Generate 20 more words
   for (let i = 0; i < 20; i++) {
     let word = getRandomWord(difficulty, language);
-    
+
     if (punctuation && Math.random() < 0.1) {
       word = addPunctuation(word);
     }
-    
+
     state.words.push(word);
-    
+
     // Create word element
     const wordElement = document.createElement("div");
     wordElement.className = "word";
@@ -2514,8 +2555,12 @@ function updateStats() {
   // Calculate accuracy - ensure it doesn't exceed 100%
   let accuracy = 100;
   if (state.totalKeystrokes > 0) {
-    const totalCorrectChars = state.correctWords * 5 + (state.currentCharIndex || 0);
-    accuracy = Math.min(100, Math.round((totalCorrectChars / state.totalKeystrokes) * 100));
+    const totalCorrectChars =
+      state.correctWords * 5 + (state.currentCharIndex || 0);
+    accuracy = Math.min(
+      100,
+      Math.round((totalCorrectChars / state.totalKeystrokes) * 100)
+    );
   }
   elements.accuracy.textContent = `${accuracy}%`;
 
@@ -2866,21 +2911,6 @@ function showTutorial() {
   }
 }
 
-// Toggle theme
-function toggleTheme() {
-  const isDark = document.body.classList.contains("dark-theme");
-  if (isDark) {
-    document.body.classList.remove("dark-theme");
-    state.currentTheme = "light";
-    elements.themeToggle.textContent = "🌙";
-  } else {
-    document.body.classList.add("dark-theme");
-    state.currentTheme = "dark";
-    elements.themeToggle.textContent = "☀️";
-  }
-  saveUserPreferences();
-}
-
 // Change theme
 function changeTheme(theme) {
   document.body.className = ""; // Remove all theme classes
@@ -2985,7 +3015,7 @@ function updateUserDisplay() {
     elements.logoutBtn.style.display = "block";
     elements.userNameDisplay.textContent =
       state.user.displayName || state.user.email;
-    
+
     // Display profile picture if available
     if (state.user.photoURL) {
       elements.userAvatar.innerHTML = `<img src="${state.user.photoURL}" alt="Profile" />`;
@@ -2996,7 +3026,7 @@ function updateUserDisplay() {
         .charAt(0)
         .toUpperCase();
     }
-    
+
     elements.profileContainer.style.display = "flex";
     updateProfileDisplay();
   } else {
@@ -3203,6 +3233,15 @@ function loadUserData() {
         state.userData = doc.data();
         state.testHistory = state.userData.testHistory || [];
         state.achievements = state.userData.achievements || [];
+
+        // Load curriculum progress from Firestore
+        if (state.userData.curriculumProgress) {
+          localStorage.setItem(
+            "curriculumProgress",
+            JSON.stringify(state.userData.curriculumProgress)
+          );
+          loadCurriculum(); // Reload curriculum with saved progress
+        }
       } else {
         // Create new user document
         state.userData = {
@@ -3211,6 +3250,7 @@ function loadUserData() {
           joined: new Date(),
           testHistory: [],
           achievements: [],
+          curriculumProgress: {},
         };
         db.collection("users").doc(state.user.uid).set(state.userData);
       }
@@ -3246,12 +3286,15 @@ function saveTestResult(testResult) {
   if (testResult.wpm > 0 && testResult.accuracy >= 90) {
     db.collection("leaderboard")
       .doc(state.user.uid)
-      .set({
-        username: state.user.displayName || state.user.email,
-        wpm: testResult.wpm,
-        accuracy: testResult.accuracy,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-      }, { merge: true })
+      .set(
+        {
+          username: state.user.displayName || state.user.email,
+          wpm: testResult.wpm,
+          accuracy: testResult.accuracy,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      )
       .then(() => {
         // Reload leaderboard
         loadLeaderboard();
@@ -3409,9 +3452,10 @@ function loadLeaderboard() {
       let leaderboardHTML = "";
 
       leaderboardData.forEach((user, index) => {
-        const isCurrentUser = state.user && user.username === state.user.displayName;
+        const isCurrentUser =
+          state.user && user.username === state.user.displayName;
         leaderboardHTML += `
-          <div class="leaderboard-item ${isCurrentUser ? 'current-user' : ''}">
+          <div class="leaderboard-item ${isCurrentUser ? "current-user" : ""}">
             <span class="leaderboard-rank">${index + 1}</span>
             <span class="leaderboard-username">${user.username}</span>
             <span class="leaderboard-wpm">${user.wpm} WPM</span>
@@ -3448,56 +3492,78 @@ function loadLeaderboard() {
 
 // Load curriculum
 function loadCurriculum() {
-  // Define curriculum levels
-  const curriculum = [
+  // Define curriculum levels structure
+  const curriculumStructure = [
     {
       id: "beginner",
       name: "Beginner",
       description: "Learn the basics of touch typing",
-      progress: 75,
       lessons: [
-        { id: "home_row", name: "Home Row", completed: true },
-        { id: "top_row", name: "Top Row", completed: true },
-        { id: "bottom_row", name: "Bottom Row", completed: false },
-        { id: "shift_keys", name: "Shift Keys", completed: false },
-        { id: "simple_words", name: "Simple Words", completed: false },
+        { id: "home_row", name: "Home Row" },
+        { id: "top_row", name: "Top Row" },
+        { id: "bottom_row", name: "Bottom Row" },
+        { id: "shift_keys", name: "Shift Keys" },
+        { id: "simple_words", name: "Simple Words" },
       ],
     },
     {
       id: "intermediate",
       name: "Intermediate",
       description: "Improve your speed and accuracy",
-      progress: 30,
       lessons: [
-        { id: "common_words", name: "Common Words", completed: true },
-        { id: "punctuation", name: "Punctuation", completed: false },
-        { id: "numbers", name: "Numbers", completed: false },
-        { id: "short_sentences", name: "Short Sentences", completed: false },
-        { id: "longer_texts", name: "Longer Texts", completed: false },
+        { id: "common_words", name: "Common Words" },
+        { id: "punctuation", name: "Punctuation" },
+        { id: "numbers", name: "Numbers" },
+        { id: "short_sentences", name: "Short Sentences" },
+        { id: "longer_texts", name: "Longer Texts" },
       ],
     },
     {
       id: "advanced",
       name: "Advanced",
       description: "Master advanced typing techniques",
-      progress: 0,
       lessons: [
-        {
-          id: "complex_sentences",
-          name: "Complex Sentences",
-          completed: false,
-        },
-        { id: "technical_terms", name: "Technical Terms", completed: false },
-        { id: "speed_challenges", name: "Speed Challenges", completed: false },
-        {
-          id: "accuracy_challenges",
-          name: "Accuracy Challenges",
-          completed: false,
-        },
-        { id: "endurance_tests", name: "Endurance Tests", completed: false },
+        { id: "complex_sentences", name: "Complex Sentences" },
+        { id: "technical_terms", name: "Technical Terms" },
+        { id: "speed_challenges", name: "Speed Challenges" },
+        { id: "accuracy_challenges", name: "Accuracy Challenges" },
+        { id: "endurance_tests", name: "Endurance Tests" },
       ],
     },
   ];
+
+  // Load progress from localStorage or use default
+  let savedProgress = localStorage.getItem("curriculumProgress");
+  let completedLessons = savedProgress ? JSON.parse(savedProgress) : {};
+
+  // Build curriculum with progress
+  const curriculum = curriculumStructure.map((level) => {
+    const lessons = level.lessons.map((lesson, index) => {
+      const lessonKey = `${level.id}_${lesson.id}`;
+      const completed = completedLessons[lessonKey] || false;
+
+      // First lesson is always unlocked, others unlock when previous is completed
+      const previousLessonKey =
+        index > 0 ? `${level.id}_${level.lessons[index - 1].id}` : null;
+      const locked = index > 0 && !completedLessons[previousLessonKey];
+
+      return {
+        ...lesson,
+        completed,
+        locked,
+      };
+    });
+
+    // Calculate progress percentage
+    const completedCount = lessons.filter((l) => l.completed).length;
+    const progress = Math.round((completedCount / lessons.length) * 100);
+
+    return {
+      ...level,
+      lessons,
+      progress,
+    };
+  });
 
   state.curriculum = curriculum;
 
@@ -3506,12 +3572,14 @@ function loadCurriculum() {
   curriculum.forEach((level) => {
     let lessonsHTML = "";
     level.lessons.forEach((lesson) => {
+      const statusIcon = lesson.completed ? "✓" : lesson.locked ? "🔒" : "";
       lessonsHTML += `
             <div class="lesson ${lesson.completed ? "completed" : ""} ${
-        !lesson.completed && level.progress < 100 ? "locked" : ""
+        lesson.locked ? "locked" : ""
       }" 
                  data-level="${level.id}" data-lesson="${lesson.id}">
-              ${lesson.name}
+              <span class="lesson-name">${lesson.name}</span>
+              <span class="lesson-status">${statusIcon}</span>
             </div>
           `;
     });
@@ -3547,6 +3615,19 @@ function loadCurriculum() {
 
 // Start curriculum lesson
 function startCurriculumLesson(levelId, lessonId) {
+  if (!levelId || !lessonId) {
+    // If no lesson specified, find the first incomplete lesson
+    const firstIncomplete = findFirstIncompleteLesson();
+    if (firstIncomplete) {
+      levelId = firstIncomplete.levelId;
+      lessonId = firstIncomplete.lessonId;
+    } else {
+      // All lessons completed, start first lesson
+      levelId = state.curriculum[0].id;
+      lessonId = state.curriculum[0].lessons[0].id;
+    }
+  }
+
   // Set the current lesson
   state.currentLesson = { levelId, lessonId };
 
@@ -3567,12 +3648,100 @@ function startCurriculumLesson(levelId, lessonId) {
     case "simple_words":
       generateSimpleWordsText();
       break;
+    case "common_words":
+      generateCommonWordsText();
+      break;
+    case "punctuation":
+      generatePunctuationText();
+      break;
+    case "numbers":
+      generateNumbersLessonText();
+      break;
+    case "short_sentences":
+      generateShortSentencesText();
+      break;
+    case "longer_texts":
+      generateLongerTextsText();
+      break;
+    case "complex_sentences":
+      generateComplexSentencesText();
+      break;
+    case "technical_terms":
+      generateTechnicalTermsText();
+      break;
+    case "speed_challenges":
+      generateSpeedChallengeText();
+      break;
+    case "accuracy_challenges":
+      generateAccuracyChallengeText();
+      break;
+    case "endurance_tests":
+      generateEnduranceTestText();
+      break;
     default:
       generateWords();
   }
 
   // Start the test
   startTest();
+}
+
+// Find first incomplete lesson
+function findFirstIncompleteLesson() {
+  for (const level of state.curriculum) {
+    for (const lesson of level.lessons) {
+      if (!lesson.completed && !lesson.locked) {
+        return { levelId: level.id, lessonId: lesson.id };
+      }
+    }
+  }
+  return null;
+}
+
+// Complete curriculum lesson
+function completeCurriculumLesson(wpm, accuracy) {
+  if (!state.currentLesson) return;
+
+  const { levelId, lessonId } = state.currentLesson;
+  const lessonKey = `${levelId}_${lessonId}`;
+
+  // Load current progress
+  let savedProgress = localStorage.getItem("curriculumProgress");
+  let completedLessons = savedProgress ? JSON.parse(savedProgress) : {};
+
+  // Mark lesson as completed if performance is good enough
+  // Require at least 80% accuracy to pass
+  if (accuracy >= 80) {
+    completedLessons[lessonKey] = true;
+    localStorage.setItem(
+      "curriculumProgress",
+      JSON.stringify(completedLessons)
+    );
+
+    // Reload curriculum to update UI
+    loadCurriculum();
+
+    // Show success notification
+    showNotification(
+      `✓ Lesson completed! ${wpm} WPM with ${accuracy}% accuracy`
+    );
+
+    // Save to Firestore if user is logged in
+    if (state.user) {
+      db.collection("users")
+        .doc(state.user.uid)
+        .update({
+          curriculumProgress: completedLessons,
+        })
+        .catch((error) => {
+          console.error("Error saving curriculum progress:", error);
+        });
+    }
+  } else {
+    showNotification(
+      `Need at least 80% accuracy to complete this lesson. Try again!`
+    );
+  }
 }
 
 // Generate home row practice text
@@ -3722,6 +3891,296 @@ function generateSimpleWordsText() {
   });
 
   // Highlight first word
+  updateWordHighlighting();
+}
+
+// Generate common words practice text
+function generateCommonWordsText() {
+  const commonWords = [
+    "the",
+    "be",
+    "to",
+    "of",
+    "and",
+    "a",
+    "in",
+    "that",
+    "have",
+    "I",
+    "it",
+    "for",
+    "not",
+    "on",
+    "with",
+    "he",
+    "as",
+    "you",
+    "do",
+    "at",
+    "this",
+    "but",
+    "his",
+    "by",
+    "from",
+    "they",
+    "we",
+    "say",
+    "her",
+    "she",
+  ];
+  state.words = commonWords;
+  elements.wordsContainer.innerHTML = "";
+  state.words.forEach((word) => {
+    const wordElement = document.createElement("div");
+    wordElement.className = "word";
+    wordElement.textContent = word;
+    elements.wordsContainer.appendChild(wordElement);
+  });
+  updateWordHighlighting();
+}
+
+// Generate punctuation practice text
+function generatePunctuationText() {
+  const punctuationWords = [
+    "Hello!",
+    "How are you?",
+    "I'm fine.",
+    "Really?",
+    "Yes, indeed.",
+    "Wait...",
+    "Stop!",
+    "Don't go.",
+    "Can you?",
+    "Sure, why not?",
+    "It's great!",
+    "Wow!",
+    "Amazing.",
+    "Oh, no!",
+    "Let's go.",
+  ];
+  state.words = punctuationWords;
+  elements.wordsContainer.innerHTML = "";
+  state.words.forEach((word) => {
+    const wordElement = document.createElement("div");
+    wordElement.className = "word";
+    wordElement.textContent = word;
+    elements.wordsContainer.appendChild(wordElement);
+  });
+  updateWordHighlighting();
+}
+
+// Generate numbers lesson text
+function generateNumbersLessonText() {
+  const numbersWords = [
+    "123",
+    "456",
+    "789",
+    "012",
+    "345",
+    "678",
+    "901",
+    "234",
+    "567",
+    "890",
+    "1234",
+    "5678",
+    "9012",
+    "3456",
+    "7890",
+  ];
+  state.words = numbersWords;
+  elements.wordsContainer.innerHTML = "";
+  state.words.forEach((word) => {
+    const wordElement = document.createElement("div");
+    wordElement.className = "word";
+    wordElement.textContent = word;
+    elements.wordsContainer.appendChild(wordElement);
+  });
+  updateWordHighlighting();
+}
+
+// Generate short sentences text
+function generateShortSentencesText() {
+  const sentences = [
+    "The cat sat.",
+    "Dogs can run.",
+    "Birds fly high.",
+    "Fish swim fast.",
+    "I like coding.",
+    "She reads books.",
+    "He plays games.",
+    "We learn daily.",
+    "They work hard.",
+    "Time flies quickly.",
+  ];
+  state.words = sentences;
+  elements.wordsContainer.innerHTML = "";
+  state.words.forEach((word) => {
+    const wordElement = document.createElement("div");
+    wordElement.className = "word";
+    wordElement.textContent = word;
+    elements.wordsContainer.appendChild(wordElement);
+  });
+  updateWordHighlighting();
+}
+
+// Generate longer texts
+function generateLongerTextsText() {
+  const texts = [
+    "The quick brown fox jumps over the lazy dog.",
+    "Practice makes perfect when learning to type.",
+    "Typing speed improves with consistent practice.",
+    "Focus on accuracy before increasing speed.",
+    "Good posture helps prevent typing fatigue.",
+  ];
+  state.words = texts;
+  elements.wordsContainer.innerHTML = "";
+  state.words.forEach((word) => {
+    const wordElement = document.createElement("div");
+    wordElement.className = "word";
+    wordElement.textContent = word;
+    elements.wordsContainer.appendChild(wordElement);
+  });
+  updateWordHighlighting();
+}
+
+// Generate complex sentences text
+function generateComplexSentencesText() {
+  const sentences = [
+    "Although it was raining heavily, they decided to continue their journey.",
+    "The conference, which was scheduled for next week, has been postponed.",
+    "Programming requires logical thinking, problem-solving skills, and patience.",
+    "Despite numerous challenges, the team successfully completed the project.",
+    "Technology continues to evolve at an unprecedented rate in modern society.",
+  ];
+  state.words = sentences;
+  elements.wordsContainer.innerHTML = "";
+  state.words.forEach((word) => {
+    const wordElement = document.createElement("div");
+    wordElement.className = "word";
+    wordElement.textContent = word;
+    elements.wordsContainer.appendChild(wordElement);
+  });
+  updateWordHighlighting();
+}
+
+// Generate technical terms text
+function generateTechnicalTermsText() {
+  const terms = [
+    "algorithm",
+    "database",
+    "function",
+    "variable",
+    "parameter",
+    "interface",
+    "implementation",
+    "inheritance",
+    "polymorphism",
+    "encapsulation",
+    "asynchronous",
+    "synchronous",
+    "authentication",
+    "authorization",
+    "deployment",
+  ];
+  state.words = terms;
+  elements.wordsContainer.innerHTML = "";
+  state.words.forEach((word) => {
+    const wordElement = document.createElement("div");
+    wordElement.className = "word";
+    wordElement.textContent = word;
+    elements.wordsContainer.appendChild(wordElement);
+  });
+  updateWordHighlighting();
+}
+
+// Generate speed challenge text
+function generateSpeedChallengeText() {
+  const words = [];
+  const speedWords = [
+    "fast",
+    "quick",
+    "rapid",
+    "swift",
+    "speedy",
+    "hasty",
+    "brisk",
+    "fleet",
+  ];
+  for (let i = 0; i < 30; i++) {
+    words.push(speedWords[Math.floor(Math.random() * speedWords.length)]);
+  }
+  state.words = words;
+  elements.wordsContainer.innerHTML = "";
+  state.words.forEach((word) => {
+    const wordElement = document.createElement("div");
+    wordElement.className = "word";
+    wordElement.textContent = word;
+    elements.wordsContainer.appendChild(wordElement);
+  });
+  updateWordHighlighting();
+}
+
+// Generate accuracy challenge text
+function generateAccuracyChallengeText() {
+  const words = [
+    "accommodate",
+    "bureaucracy",
+    "conscientious",
+    "embarrass",
+    "fluorescent",
+    "guarantee",
+    "harass",
+    "independent",
+    "jewelry",
+    "liaison",
+    "maintenance",
+    "necessary",
+    "occurrence",
+    "privilege",
+    "questionnaire",
+  ];
+  state.words = words;
+  elements.wordsContainer.innerHTML = "";
+  state.words.forEach((word) => {
+    const wordElement = document.createElement("div");
+    wordElement.className = "word";
+    wordElement.textContent = word;
+    elements.wordsContainer.appendChild(wordElement);
+  });
+  updateWordHighlighting();
+}
+
+// Generate endurance test text
+function generateEnduranceTestText() {
+  const words = [];
+  const enduranceWords = [
+    "continue",
+    "persist",
+    "endure",
+    "maintain",
+    "sustain",
+    "persevere",
+    "practice",
+    "improve",
+    "develop",
+    "enhance",
+    "strengthen",
+    "build",
+  ];
+  for (let i = 0; i < 50; i++) {
+    words.push(
+      enduranceWords[Math.floor(Math.random() * enduranceWords.length)]
+    );
+  }
+  state.words = words;
+  elements.wordsContainer.innerHTML = "";
+  state.words.forEach((word) => {
+    const wordElement = document.createElement("div");
+    wordElement.className = "word";
+    wordElement.textContent = word;
+    elements.wordsContainer.appendChild(wordElement);
+  });
   updateWordHighlighting();
 }
 
