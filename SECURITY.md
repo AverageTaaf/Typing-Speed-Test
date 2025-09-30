@@ -21,7 +21,7 @@ We take security seriously. If you discover a security vulnerability, please fol
 
 Instead:
 
-1. **Email us directly** at: [security@your-domain.com]
+1. **Email us directly** at: [montaquim.tbm@gmail.com]
 2. **Subject line**: "Security Vulnerability - TypeMaster"
 3. **Include**:
    - Description of the vulnerability
