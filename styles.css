@@ -176,25 +176,6 @@ h1 {
   color: white;
 }
 
-.theme-toggle {
-  background: var(--card-bg);
-  border: none;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
-  box-shadow: var(--shadow);
-  transition: var(--transition);
-}
-
-.theme-toggle:hover {
-  transform: scale(1.1);
-}
-
 button {
   background: var(--primary-color);
   color: white;
@@ -934,17 +915,23 @@ footer a:hover {
 }
 
 .lesson {
-  padding: 0.5rem;
+  padding: 0.5rem 0.75rem;
   background: var(--card-bg);
   border-radius: 4px;
   text-align: center;
   cursor: pointer;
   transition: var(--transition);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.lesson:hover {
+.lesson:hover:not(.locked) {
   background: var(--primary-color);
   color: white;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
 }
 
 .lesson.completed {
@@ -955,6 +942,21 @@ footer a:hover {
 .lesson.locked {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.lesson.locked:hover {
+  transform: none;
+}
+
+.lesson-name {
+  flex: 1;
+  text-align: left;
+}
+
+.lesson-status {
+  font-size: 1.2rem;
+  min-width: 20px;
+  text-align: right;
 }
 
 .analytics-grid {
@@ -1205,6 +1207,25 @@ footer a:hover {
   transition: all 0.3s ease;
 }
 
+.timer.danger {
+  background: #ef4444 !important;
+  animation: pulse-danger 1s ease-in-out infinite;
+}
+
+@keyframes pulse-danger {
+
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+  }
+}
+
 #confetti-canvas {
   position: fixed;
   top: 0;
@@ -1217,8 +1238,13 @@ footer a:hover {
 
 /* Additional Animations */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideIn {
@@ -1226,6 +1252,7 @@ footer a:hover {
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1233,20 +1260,43 @@ footer a:hover {
 }
 
 @keyframes correctChar {
-  0% { transform: scale(1.2); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1.2);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-4px); }
-  75% { transform: translateX(4px); }
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-4px);
+  }
+
+  75% {
+    transform: translateX(4px);
+  }
 }
 
 @keyframes successPop {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.1);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
 
 @keyframes countUp {
@@ -1254,6 +1304,7 @@ footer a:hover {
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1265,6 +1316,7 @@ footer a:hover {
     opacity: 0;
     transform: scale(0.9) translateY(-20px);
   }
+
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
