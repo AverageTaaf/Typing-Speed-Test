@@ -231,7 +231,25 @@ function setupEventListeners() {
   elements.googleSignup.addEventListener("click", handleGoogleSignup);
   elements.signupPassword.addEventListener("input", validatePassword);
 
-  // Modal controls
+  // Toggle keyboard visibility
+  const toggleKeyboardBtn = document.getElementById("toggle-keyboard");
+  const keyboardContainer = document.querySelector(".keyboard-container");
+
+  if (toggleKeyboardBtn && keyboardContainer) {
+    toggleKeyboardBtn.addEventListener("click", () => {
+      keyboardContainer.classList.toggle("visible");
+      const isVisible = keyboardContainer.classList.contains("visible");
+      toggleKeyboardBtn.innerHTML = `<i class="fas fa-keyboard"></i> <span>${
+        isVisible ? "Hide" : "Show"
+      } Keyboard</span>`;
+    });
+  }
+
+  // Results actions
+  elements.resultsShare.addEventListener("click", shareResults);
+  elements.resultsRetry.addEventListener("click", retryTest);
+
+  // Close buttons
   elements.closeAuth.addEventListener("click", () =>
     hideModal(elements.authModal)
   );
@@ -257,23 +275,6 @@ function setupEventListeners() {
   document
     .getElementById("accept-help")
     .addEventListener("click", () => hideModal(elements.helpModal));
-
-  // Results actions
-  elements.resultsShare.addEventListener("click", shareResults);
-  elements.resultsRetry.addEventListener("click", retryTest);
-
-  // Footer links
-  elements.privacyLink.addEventListener("click", (e) => {
-    e.preventDefault();
-    showModal(elements.privacyModal);
-  });
-  elements.termsLink.addEventListener("click", (e) => {
-    e.preventDefault();
-    showModal(elements.termsModal);
-  });
-  elements.helpBtn.addEventListener("click", () => {
-    showModal(elements.helpModal);
-  });
 
   // Keyboard events
   document.addEventListener("keydown", handleGlobalKeyDown);
@@ -840,7 +841,7 @@ function playKeySound() {
 
   try {
     const ctx = initAudioContext();
-    
+
     switch (state.soundType) {
       case "mechanical":
         playMechanicalSound(ctx);
@@ -871,21 +872,21 @@ function playKeySound() {
 // Mechanical keyboard sound (Cherry MX Blue style)
 function playMechanicalSound(ctx) {
   const now = ctx.currentTime;
-  
+
   // Create oscillator for the click
   const oscillator = ctx.createOscillator();
   const gainNode = ctx.createGain();
-  
+
   oscillator.connect(gainNode);
   gainNode.connect(ctx.destination);
-  
+
   // Sharp, clicky sound
   oscillator.frequency.setValueAtTime(800, now);
   oscillator.frequency.exponentialRampToValueAtTime(400, now + 0.01);
-  
+
   gainNode.gain.setValueAtTime(0.3 * state.soundVolume, now);
   gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
-  
+
   oscillator.start(now);
   oscillator.stop(now + 0.05);
 }
@@ -893,36 +894,36 @@ function playMechanicalSound(ctx) {
 // Typewriter sound (vintage mechanical)
 function playTypewriterSound(ctx) {
   const now = ctx.currentTime;
-  
+
   // Main strike sound
   const oscillator1 = ctx.createOscillator();
   const gainNode1 = ctx.createGain();
-  
+
   oscillator1.connect(gainNode1);
   gainNode1.connect(ctx.destination);
-  
+
   oscillator1.frequency.setValueAtTime(150, now);
   oscillator1.frequency.exponentialRampToValueAtTime(50, now + 0.02);
-  
+
   gainNode1.gain.setValueAtTime(0.4 * state.soundVolume, now);
   gainNode1.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
-  
+
   oscillator1.start(now);
   oscillator1.stop(now + 0.08);
-  
+
   // Metallic resonance
   const oscillator2 = ctx.createOscillator();
   const gainNode2 = ctx.createGain();
-  
+
   oscillator2.connect(gainNode2);
   gainNode2.connect(ctx.destination);
-  
+
   oscillator2.frequency.setValueAtTime(1200, now + 0.005);
   oscillator2.frequency.exponentialRampToValueAtTime(800, now + 0.03);
-  
+
   gainNode2.gain.setValueAtTime(0.15 * state.soundVolume, now + 0.005);
   gainNode2.gain.exponentialRampToValueAtTime(0.01, now + 0.06);
-  
+
   oscillator2.start(now + 0.005);
   oscillator2.stop(now + 0.06);
 }
@@ -930,42 +931,48 @@ function playTypewriterSound(ctx) {
 // ASMR soft keyboard sound
 function playASMRSound(ctx) {
   const now = ctx.currentTime;
-  
+
   // Soft, muffled sound with pink noise
   const bufferSize = ctx.sampleRate * 0.1;
   const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
   const data = buffer.getChannelData(0);
-  
+
   // Generate pink noise (softer than white noise)
-  let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+  let b0 = 0,
+    b1 = 0,
+    b2 = 0,
+    b3 = 0,
+    b4 = 0,
+    b5 = 0,
+    b6 = 0;
   for (let i = 0; i < bufferSize; i++) {
     const white = Math.random() * 2 - 1;
     b0 = 0.99886 * b0 + white * 0.0555179;
     b1 = 0.99332 * b1 + white * 0.0750759;
-    b2 = 0.96900 * b2 + white * 0.1538520;
-    b3 = 0.86650 * b3 + white * 0.3104856;
-    b4 = 0.55000 * b4 + white * 0.5329522;
-    b5 = -0.7616 * b5 - white * 0.0168980;
+    b2 = 0.969 * b2 + white * 0.153852;
+    b3 = 0.8665 * b3 + white * 0.3104856;
+    b4 = 0.55 * b4 + white * 0.5329522;
+    b5 = -0.7616 * b5 - white * 0.016898;
     data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11;
     b6 = white * 0.115926;
   }
-  
+
   const noise = ctx.createBufferSource();
   const gainNode = ctx.createGain();
   const filter = ctx.createBiquadFilter();
-  
+
   noise.buffer = buffer;
   noise.connect(filter);
   filter.connect(gainNode);
   gainNode.connect(ctx.destination);
-  
+
   filter.type = "lowpass";
   filter.frequency.setValueAtTime(2000, now);
   filter.frequency.exponentialRampToValueAtTime(500, now + 0.05);
-  
+
   gainNode.gain.setValueAtTime(0.15 * state.soundVolume, now);
   gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
-  
+
   noise.start(now);
   noise.stop(now + 0.08);
 }
@@ -973,25 +980,25 @@ function playASMRSound(ctx) {
 // Soft membrane keyboard sound
 function playSoftSound(ctx) {
   const now = ctx.currentTime;
-  
+
   const oscillator = ctx.createOscillator();
   const gainNode = ctx.createGain();
   const filter = ctx.createBiquadFilter();
-  
+
   oscillator.connect(filter);
   filter.connect(gainNode);
   gainNode.connect(ctx.destination);
-  
+
   oscillator.type = "sine";
   oscillator.frequency.setValueAtTime(300, now);
   oscillator.frequency.exponentialRampToValueAtTime(150, now + 0.03);
-  
+
   filter.type = "lowpass";
   filter.frequency.setValueAtTime(800, now);
-  
+
   gainNode.gain.setValueAtTime(0.2 * state.soundVolume, now);
   gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.04);
-  
+
   oscillator.start(now);
   oscillator.stop(now + 0.04);
 }
@@ -999,21 +1006,21 @@ function playSoftSound(ctx) {
 // Clicky keyboard sound (tactile switches)
 function playClickySound(ctx) {
   const now = ctx.currentTime;
-  
+
   // High-pitched click
   const oscillator = ctx.createOscillator();
   const gainNode = ctx.createGain();
-  
+
   oscillator.connect(gainNode);
   gainNode.connect(ctx.destination);
-  
+
   oscillator.type = "square";
   oscillator.frequency.setValueAtTime(1200, now);
   oscillator.frequency.exponentialRampToValueAtTime(600, now + 0.008);
-  
+
   gainNode.gain.setValueAtTime(0.25 * state.soundVolume, now);
   gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.03);
-  
+
   oscillator.start(now);
   oscillator.stop(now + 0.03);
 }
@@ -1021,19 +1028,19 @@ function playClickySound(ctx) {
 // Silent keyboard sound (very subtle)
 function playSilentSound(ctx) {
   const now = ctx.currentTime;
-  
+
   const oscillator = ctx.createOscillator();
   const gainNode = ctx.createGain();
-  
+
   oscillator.connect(gainNode);
   gainNode.connect(ctx.destination);
-  
+
   oscillator.type = "sine";
   oscillator.frequency.setValueAtTime(400, now);
-  
+
   gainNode.gain.setValueAtTime(0.05 * state.soundVolume, now);
   gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.02);
-  
+
   oscillator.start(now);
   oscillator.stop(now + 0.02);
 }
@@ -3050,6 +3057,7 @@ function checkAchievements(wpm, accuracy, timeElapsed) {
             </div>
           `;
     });
+    achievementsHTML += "<br>"; // Add <br> tag after achievements
     elements.resultsAchievements.innerHTML = achievementsHTML;
 
     // Show confetti for achievements
@@ -3500,6 +3508,7 @@ function saveTestResult(testResult) {
     .doc(state.user.uid)
     .update({
       testHistory: firebase.firestore.FieldValue.arrayUnion(testResult),
+      achievements: state.achievements, // Save achievements to database
     })
     .catch((error) => {
       console.error("Error saving test result:", error);
