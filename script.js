@@ -193,7 +193,7 @@ async function init() {
   updateWordHighlighting();
 
   // Initialize ML models for enhanced functionality
-  updateMLStatus('loading');
+  updateMLStatus("loading");
   await initializeMLModels();
 
   // Initialize charts with empty data
@@ -257,6 +257,7 @@ function setupEventListeners() {
   elements.resultsRetry.addEventListener("click", retryTest);
 
   // Close buttons
+  elements.helpBtn.addEventListener("click", () => showModal(elements.helpModal));
   elements.closeAuth.addEventListener("click", () =>
     hideModal(elements.authModal)
   );
