@@ -39,13 +39,40 @@
   --text-color: #831843;
 }
 
-.green-theme {
-  --primary-color: #10b981;
-  --secondary-color: #059669;
-  --accent-color: #34d399;
-  --bg-color: #ecfdf5;
+.purple-theme {
+  --primary-color: #7c3aed;
+  --secondary-color: #6d28d9;
+  --accent-color: #8b5cf6;
+  --bg-color: #faf5ff;
   --card-bg: #ffffff;
-  --text-color: #064e3b;
+  --text-color: #4c1d95;
+}
+
+.green-theme {
+  --primary-color: #059669;
+  --secondary-color: #06d47e;
+  --accent-color: #06d455;
+  --bg-color: #ecfeff;
+  --card-bg: #ffffff;
+  --text-color: #164e63;
+}
+
+.orange-theme {
+  --primary-color: #ea580c;
+  --secondary-color: #dc2626;
+  --accent-color: #f97316;
+  --bg-color: #fff7ed;
+  --card-bg: #ffffff;
+  --text-color: #9a3412;
+}
+
+.cyan-theme {
+  --primary-color: #0891b2;
+  --secondary-color: #0e7490;
+  --accent-color: #06b6d4;
+  --bg-color: #ecfeff;
+  --card-bg: #ffffff;
+  --text-color: #164e63;
 }
 
 * {
@@ -901,14 +928,19 @@ footer a:hover {
 
 .keyboard-container {
   margin-top: 10px;
-  max-height: 0;
+  max-height: 300px;
   overflow: hidden;
   transition: max-height 0.3s ease-in-out;
   width: 100%;
 }
 
+.keyboard-container.collapsed {
+  max-height: 0;
+}
+
 .keyboard-container.visible {
-  max-height: 300px; /* Adjust based on your keyboard height */
+  max-height: 300px;
+  /* Adjust based on your keyboard height */
 }
 
 .toggle-keyboard-btn {
@@ -936,24 +968,43 @@ footer a:hover {
   font-size: 1.1em;
 }
 
-.ai-practice {
-  margin: 1rem 0;
-  padding: 1rem;
-  background: var(--bg-color);
+/* ML Status Indicator */
+.ml-status {
+  margin-bottom: 20px;
+  padding: 10px;
   border-radius: 8px;
+  text-align: center;
+  font-weight: bold;
 }
 
-.ai-suggestion {
-  margin: 0.5rem 0;
-  padding: 0.5rem;
-  background: var(--card-bg);
-  border-radius: 4px;
-  cursor: pointer;
+.ml-status.loading {
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  color: #856404;
 }
 
-.ai-suggestion:hover {
-  background: var(--primary-color);
-  color: white;
+.ml-status.ready {
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+  color: #155724;
+}
+
+.ml-status.partial {
+  background-color: #d1ecf1;
+  border: 1px solid #bee5eb;
+  color: #0c5460;
+}
+
+.ml-status.minimal {
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  color: #856404;
+}
+
+.ml-status.error {
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  color: #721c24;
 }
 
 .prediction-challenge {
