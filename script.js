@@ -179,7 +179,7 @@ const state = {
 };
 
 // Initialize the application
-function init() {
+async function init() {
   setupEventListeners();
   generateKeyboard();
   loadUserPreferences();
@@ -191,6 +191,13 @@ function init() {
   // Generate initial words on page load
   generateWords();
   updateWordHighlighting();
+
+  // Initialize ML models for enhanced functionality
+  updateMLStatus('loading');
+  await initializeMLModels();
+
+  // Initialize charts with empty data
+  initializeCharts();
 }
 
 // Set up event listeners
@@ -237,10 +244,10 @@ function setupEventListeners() {
 
   if (toggleKeyboardBtn && keyboardContainer) {
     toggleKeyboardBtn.addEventListener("click", () => {
-      keyboardContainer.classList.toggle("visible");
-      const isVisible = keyboardContainer.classList.contains("visible");
+      keyboardContainer.classList.toggle("collapsed");
+      const isCollapsed = keyboardContainer.classList.contains("collapsed");
       toggleKeyboardBtn.innerHTML = `<i class="fas fa-keyboard"></i> <span>${
-        isVisible ? "Hide" : "Show"
+        isCollapsed ? "Show" : "Hide"
       } Keyboard</span>`;
     });
   }
@@ -824,9 +831,6 @@ function highlightVirtualKey(key) {
   }
 }
 
-// Audio Context for sound generation
-let audioContext = null;
-
 // Initialize Audio Context
 function initAudioContext() {
   if (!audioContext) {
@@ -858,8 +862,14 @@ function playKeySound() {
       case "clicky":
         playClickySound(ctx);
         break;
-      case "silent":
-        playSilentSound(ctx);
+      case "vintage":
+        playVintageSound(ctx);
+        break;
+      case "modern":
+        playModernSound(ctx);
+        break;
+      case "gaming":
+        playGamingSound(ctx);
         break;
       default:
         playMechanicalSound(ctx);
@@ -1043,6 +1053,116 @@ function playSilentSound(ctx) {
 
   oscillator.start(now);
   oscillator.stop(now + 0.02);
+}
+
+// Vintage computer sound (like old IBM keyboards)
+function playVintageSound(ctx) {
+  const now = ctx.currentTime;
+
+  // Main click sound
+  const oscillator1 = ctx.createOscillator();
+  const gainNode1 = ctx.createGain();
+  const filter1 = ctx.createBiquadFilter();
+
+  oscillator1.connect(filter1);
+  filter1.connect(gainNode1);
+  gainNode1.connect(ctx.destination);
+
+  oscillator1.frequency.setValueAtTime(200, now);
+  oscillator1.frequency.exponentialRampToValueAtTime(100, now + 0.03);
+
+  filter1.type = "lowpass";
+  filter1.frequency.setValueAtTime(800, now);
+
+  gainNode1.gain.setValueAtTime(0.3 * state.soundVolume, now);
+  gainNode1.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+
+  oscillator1.start(now);
+  oscillator1.stop(now + 0.08);
+
+  // Low frequency resonance
+  const oscillator2 = ctx.createOscillator();
+  const gainNode2 = ctx.createGain();
+
+  oscillator2.connect(gainNode2);
+  gainNode2.connect(ctx.destination);
+
+  oscillator2.frequency.setValueAtTime(80, now + 0.01);
+
+  gainNode2.gain.setValueAtTime(0.1 * state.soundVolume, now + 0.01);
+  gainNode2.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+
+  oscillator2.start(now + 0.01);
+  oscillator2.stop(now + 0.1);
+}
+
+// Modern laptop sound (clean, minimal)
+function playModernSound(ctx) {
+  const now = ctx.currentTime;
+
+  const oscillator = ctx.createOscillator();
+  const gainNode = ctx.createGain();
+  const filter = ctx.createBiquadFilter();
+
+  oscillator.connect(filter);
+  filter.connect(gainNode);
+  gainNode.connect(ctx.destination);
+
+  oscillator.type = "sine";
+  oscillator.frequency.setValueAtTime(600, now);
+  oscillator.frequency.exponentialRampToValueAtTime(300, now + 0.02);
+
+  filter.type = "lowpass";
+  filter.frequency.setValueAtTime(1200, now);
+
+  gainNode.gain.setValueAtTime(0.15 * state.soundVolume, now);
+  gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.04);
+
+  oscillator.start(now);
+  oscillator.stop(now + 0.04);
+}
+
+// Gaming keyboard sound (deep, satisfying)
+function playGamingSound(ctx) {
+  const now = ctx.currentTime;
+
+  // Deep bass click
+  const oscillator1 = ctx.createOscillator();
+  const gainNode1 = ctx.createGain();
+
+  oscillator1.connect(gainNode1);
+  gainNode1.connect(ctx.destination);
+
+  oscillator1.frequency.setValueAtTime(150, now);
+  oscillator1.frequency.exponentialRampToValueAtTime(50, now + 0.05);
+
+  gainNode1.gain.setValueAtTime(0.4 * state.soundVolume, now);
+  gainNode1.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+
+  oscillator1.start(now);
+  oscillator1.stop(now + 0.1);
+
+  // High frequency snap
+  const oscillator2 = ctx.createOscillator();
+  const gainNode2 = ctx.createGain();
+  const filter = ctx.createBiquadFilter();
+
+  oscillator2.connect(filter);
+  filter.connect(gainNode2);
+  gainNode2.connect(ctx.destination);
+
+  oscillator2.type = "square";
+  oscillator2.frequency.setValueAtTime(2000, now);
+  oscillator2.frequency.exponentialRampToValueAtTime(1000, now + 0.01);
+
+  filter.type = "highpass";
+  filter.frequency.setValueAtTime(1500, now);
+
+  gainNode2.gain.setValueAtTime(0.2 * state.soundVolume, now);
+  gainNode2.gain.exponentialRampToValueAtTime(0.01, now + 0.03);
+
+  oscillator2.start(now);
+  oscillator2.stop(now + 0.03);
 }
 
 // Start timer
@@ -1322,78 +1442,6 @@ function generatePredictionText() {
   };
 
   const texts = predictionTexts[difficulty] || predictionTexts.easy;
-  const text = texts[Math.floor(Math.random() * texts.length)];
-
-  // Clear words container and add the text
-  elements.wordsContainer.innerHTML = "";
-  state.words = text.split(" ");
-
-  state.words.forEach((word) => {
-    const wordElement = document.createElement("div");
-    wordElement.className = "word";
-    wordElement.textContent = word;
-    elements.wordsContainer.appendChild(wordElement);
-  });
-
-  // Highlight first word
-  updateWordHighlighting();
-}
-
-// Generate practice text based on focus area
-function generatePracticeText() {
-  const focus = elements.practiceFocus.value;
-
-  // Expanded practice texts by focus area
-  const practiceTexts = {
-    speed: [
-      "Practice typing quickly without sacrificing accuracy. Speed will come with consistent practice over time.",
-      "The goal is to type faster while maintaining high accuracy. Don't rush too much at the beginning.",
-      "Regular practice is key to improving your typing speed. Try to practice daily for best results.",
-      "Focus on building muscle memory through repetition. Your fingers will learn the keyboard layout naturally.",
-      "Start slow and gradually increase your speed. Consistency is more important than occasional bursts of speed.",
-      "Use proper finger placement on the home row keys. This foundation will help you type faster efficiently.",
-      "Challenge yourself with timed tests regularly. Track your progress and celebrate small improvements daily.",
-      "Avoid looking at the keyboard while typing. Trust your muscle memory and keep your eyes on screen.",
-      "Take short breaks to prevent fatigue. Fresh fingers type faster and more accurately than tired ones.",
-      "Set realistic goals for improvement. Aim to increase your speed by five words per minute each week.",
-    ],
-    accuracy: [
-      "Focus on typing each character correctly. Accuracy is more important than speed when you're learning.",
-      "Make sure every keystroke is precise. It's better to type slowly and accurately than fast with errors.",
-      "Pay attention to common mistakes and work on eliminating them. Accuracy builds a strong foundation.",
-      "Double-check your work before moving forward. Catching errors early prevents bad habits from forming.",
-      "Practice difficult letter combinations repeatedly. Master the tricky keys that cause you the most trouble.",
-      "Maintain proper posture while typing. Good ergonomics lead to better accuracy and less strain.",
-      "Use all your fingers correctly. Each finger has specific keys it should press for optimal accuracy.",
-      "Slow down when you notice errors increasing. Speed without accuracy is counterproductive to learning.",
-      "Review your error patterns regularly. Identify which keys you miss most often and practice them.",
-      "Stay relaxed while typing. Tension in your hands and fingers leads to more mistakes and errors.",
-    ],
-    "difficult-words": [
-      "The extraordinary phenomenon bewildered the scientists with its inexplicable characteristics.",
-      "A mischievous squirrel quickly jumped between the branches of the enormous sequoia tree.",
-      "The conscientious entrepreneur developed a revolutionary algorithm for cybersecurity.",
-      "Pharmaceutical companies manufacture medications through sophisticated biochemical processes.",
-      "The archaeologist discovered ancient hieroglyphics in the subterranean chamber beneath the pyramid.",
-      "Simultaneously coordinating multiple projects requires exceptional organizational skills and discipline.",
-      "The meteorologist predicted unprecedented atmospheric conditions would affect weather patterns globally.",
-      "Psychological research demonstrates that cognitive development continues throughout adolescence.",
-      "Environmental sustainability requires collaborative efforts from governments corporations and individuals.",
-      "Technological advancements have revolutionized communication methods across international boundaries.",
-    ],
-    numbers: [
-      "The combination is 7294. Call 555-123-4567 for more information. The total is $245.99.",
-      "Her birthday is on 03/15/1992. The meeting is at 2:30 PM in room 405B on the 12th floor.",
-      "The coordinates are 40.7128° N, 74.0060° W. The serial number is XJ8-392-475L.",
-    ],
-    punctuation: [
-      'She asked, "What time is the meeting?" I replied, "It\'s at 3:00 p.m.—don\'t be late!"',
-      "The company's revenue increased by 15%; however, expenses grew by 20% (mainly due to inflation).",
-      "Dr. Smith—who recently published 'AI: The Future'—will speak at the conference on May 5–7, 2023.",
-    ],
-  };
-
-  const texts = practiceTexts[focus] || practiceTexts.speed;
   const text = texts[Math.floor(Math.random() * texts.length)];
 
   // Clear words container and add the text
@@ -3162,11 +3210,19 @@ function changeTheme(theme) {
 function changeFont(font) {
   document.body.style.fontFamily = "";
   if (font === "monospace") {
-    document.body.style.fontFamily = "monospace";
+    document.body.style.fontFamily = "Monaco, 'Courier New', monospace";
   } else if (font === "serif") {
     document.body.style.fontFamily = "Georgia, serif";
   } else if (font === "sans-serif") {
     document.body.style.fontFamily = "Arial, sans-serif";
+  } else if (font === "courier") {
+    document.body.style.fontFamily = "'Courier New', monospace";
+  } else if (font === "georgia") {
+    document.body.style.fontFamily = "Georgia, serif";
+  } else if (font === "arial") {
+    document.body.style.fontFamily = "Arial, sans-serif";
+  } else if (font === "times") {
+    document.body.style.fontFamily = "'Times New Roman', serif";
   }
   state.currentFont = font;
 
