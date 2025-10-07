@@ -257,7 +257,9 @@ function setupEventListeners() {
   elements.resultsRetry.addEventListener("click", retryTest);
 
   // Close buttons
-  elements.helpBtn.addEventListener("click", () => showModal(elements.helpModal));
+  elements.helpBtn.addEventListener("click", () =>
+    showModal(elements.helpModal)
+  );
   elements.closeAuth.addEventListener("click", () =>
     hideModal(elements.authModal)
   );
